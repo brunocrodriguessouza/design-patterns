@@ -1,0 +1,148 @@
+// Precisamos criar uma classe que calcule impostos. Dado um orcamento
+// teremos que calcular 10% quando o imposto for icms e 6% quando for iss
+
+// Primeira Implementacao do método realizarCalculo();
+
+public class Orcamento {
+
+	private double valor;
+
+	public Orcamento(double valor) {
+		this.valor = valor;
+	}
+	
+	public double getValor() {
+		return valor;
+	}
+}   
+
+public class CalculadorDeImpostos {
+
+	public void realizarCalculo(Orcamento orcamento, String imposto) {
+		if (imposto.equals("ICMS")) {
+			double icms = orcamento.getValor() * 0.1;
+			System.out.println(icms);
+		} else if (imposto.equals("ISS")) {
+			double iss = orcamento.getValor() * 0.6;
+		}
+	}
+}
+
+----------------------------------------------------------------------------------------------
+
+// Primeira melhoria: Criação das classes ICMS e ISS e alteracao no metodo realizarCalculo()
+// Ainda temos um problema, o metodo realizarCalculo ainda pode crescer bastante
+
+public class ICMS {
+	public double calcularICMS(Orcamento orcamento) {
+		return orcamento.getValor() * 0.1;
+	}
+}
+
+public class ISS {
+	public double calcularISS(Orcamento orcamento) {
+		return orcamento.getValor() * 0.6;
+	}
+}
+
+public class CalculadorDeImpostos {
+	public void realizarCalculo(Orcamento orcamento, String imposto) {
+		if (imposto.equals("ICMS")) {
+			double icms = new ICMS().calcularICMS(orcamento);
+			System.out.println(icms);
+		} else if (imposto.equals("ISS")) {
+			double iss = new ISS().calcularISS(orcamento);
+			System.out.println(iss);
+		}
+	}
+}
+----------------------------------------------------------------------------------------------
+
+// Segunda melhoria: removemos os if/else e criamos um método para cada imposto
+// Mas até agora só mudamos o problema de lugar, pois a cada imposto precisamos criar um novo método
+// Precisamos fazer com que esse método seja mais genérico
+
+public class CalculadorDeImpostos {
+	public void realizarCalculoICMS(Orcamento orcamento) {
+
+		double icms = new ICMS().calcularICMS(orcamento);
+		System.out.println(icms);
+	}
+
+	public void realizarCalculoISS(Orcamento orcamento) {
+		double iss = new ISS().calcularISS(orcamento);
+		System.out.println(iss);
+	}
+}
+
+----------------------------------------------------------------------------------------------
+// Terceira melhoria: Como todos impostos possuem algo em comum, ou seja todos eles recebem um orcamento
+// e retorna o imposto calculado, definimos uma Inteface com um metodo calcular e todos
+// os impostos agora implementam essa interface e implementam esse metodo calcular
+
+// Agora a nossa classe CalculadorDeImpostos não tem mais um if para cada imposto
+// e um novo imposto pode aparecer e o codigo dela não sera mais alterado
+// ela funcionara para qualquer novo imposto criado
+
+public class Orcamento {
+
+	private double valor;
+
+	public Orcamento(double valor) {
+		this.valor = valor;
+	}
+	
+	public double getValor() {
+		return valor;
+	}
+} 
+
+public interface Imposto {
+	double calcular(Orcamento orcamento);
+}
+
+public class ICMS implements Imposto {
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		return orcamento.getValor() * 0.1;
+	}
+}
+
+public class ISS implements Imposto{
+	@Override
+	public double calcular(Orcamento orcamento) {
+		return orcamento.getValor() * 0.06;
+	}
+}
+
+public class CalculadorDeImpostos {
+
+	public void realizarCalculo(Orcamento orcamento, Imposto imposto) {
+
+		double calculoImposto = imposto.calcular(orcamento);
+		System.out.println(calculoImposto);
+	}
+
+}
+
+public class TesteDeImpostos {
+	public static void main(String[] args) {
+		Imposto iss = new ISS();
+		Imposto icms = new ICMS();
+		
+		Orcamento orcamento = new Orcamento(500.0);
+		
+		CalculadorDeImpostos calculador = new CalculadorDeImpostos();
+		calculador.realizarCalculo(orcamento, iss);
+		
+		calculador.realizarCalculo(orcamento, icms);
+	}
+}
+
+----------------------------------------------------------------------------------------------
+
+
+
+
+
