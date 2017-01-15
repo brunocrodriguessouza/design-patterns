@@ -1,0 +1,202 @@
+// Precisamos aplicar descontos sobre um determinado orcamento
+// A regra inicial é a seguinte: para um orcamento mais de 5 itens o orcamento tera um desconto de 10%
+// Para um orcamento com o valor maior de 500 reais o orcamento tera um desconto de 7%.
+
+
+// Primeira Implementacao 
+
+public class Orcamento {
+
+	private double valor;
+	private  List<Item> itens;
+
+	public Orcamento(double valor) {
+		this.valor = valor;
+		itens = new ArrayList<Item>();
+	}
+	
+	public double getValor() {
+		return valor;
+	}
+	
+	public void adicionarItem(Item item){
+		 itens.add(item);
+	}
+	
+	public List<Item> getItens() {
+		return Collections.unmodifiableList(itens);
+	}
+}
+
+public class Item {
+
+	private String nome;
+	private double valor;
+
+	public Item(String nome, double valor) {
+		this.nome = nome;
+		this.valor = valor;
+
+	}
+
+	public String getNome() {
+		return nome;
+	}
+
+	public double getValor() {
+		return valor;
+	}
+
+}
+
+public class CalculadorDeDescontos {
+
+	public double calcular(Orcamento orcamento) {
+		if (orcamento.getItens().size() > 5) {
+			return orcamento.getValor() * 0.1;
+		} else if (orcamento.getValor() > 500) {
+			return orcamento.getValor() * 0.07;
+		}
+
+		return 0;
+
+	}
+}
+
+----------------------------------------------------------------------------------------------
+
+// Primeira melhoria: Foi criada uma classe para cada regra de desconto, e criada uma interface
+// com o metodo calcularDesconto, agora ambas as classes implementa essa inteface e implementa o metodo
+// calcularDesconto para verificar se o desconto deve ou nao ser aplicado.
+
+// So que ainda temos um problema, esse metodo calcular da classe CalculadorDeDescontos sempre 
+// ficara crescendo, para cada novo desconto, sempre teremos que ficar colocando um 
+// novo if para verificar se nenhum desconto foi aplicado para que aplique o proximo.
+
+public interface Desconto {
+
+	double calcularDesconto(Orcamento orcamento);
+	void setProximo(Orcamento orcamento);
+
+}
+
+public class DescontoPorCincoItens implements Desconto{
+
+	public double calcularDesconto(Orcamento orcamento){
+		if(orcamento.getItens().size() > 5){
+			 return orcamento.getValor() * 0.1;
+		}else{
+			return 0;
+		}
+	}
+}
+
+public class DescontoPorMaisDeQuinhentosReais implements Desconto{
+
+	public double calcularDesconto(Orcamento orcamento) {
+		if (orcamento.getValor() > 500) {
+			return orcamento.getValor() * 0.07;
+		} else {
+			return 0;
+		}
+	}
+}
+
+public class CalculadorDeDescontos {
+	public double calcular(Orcamento orcamento) {
+		double desconto = 0;
+
+		// if(desconto == 0) desconto = new DescontoPorCincoItens().calcularDesconto(orcamento);
+		desconto = (desconto == 0) ? new DescontoPorCincoItens().calcularDesconto(orcamento) : desconto;
+	
+		// if(desconto == 0) desconto = new DescontoPorMaisDeQuinhentosReais().calcularDesconto(orcamento);
+		desconto = (desconto == 0) ? new DescontoPorMaisDeQuinhentosReais().desconto(orcamento) : desconto;
+
+		return 0;
+	}
+}
+
+----------------------------------------------------------------------------------------------
+
+// Segunda melhoria: Foi criado na interface Desconto um metodo setProximo que se a regra do primeiro 
+// desconto nao for aplicada, ele tentar aplicar a segunda  regra
+
+public interface Desconto {
+
+	double calcularDesconto(Orcamento orcamento);
+
+	void setProximo(Desconto proximo);
+}
+
+public class DescontoPorCincoItens implements Desconto{
+
+	private Desconto proximo;
+
+	public double calcularDesconto(Orcamento orcamento){
+		if(orcamento.getItens().size() > 5){
+			 return orcamento.getValor() * 0.1;
+		}else{
+			return proximo.calcularDesconto(orcamento);
+		}
+	}
+
+	@Override
+	public void setProximo(Desconto proximo) {
+		this.proximo = proximo;
+		
+	}
+}
+
+public class DescontoPorMaisDeQuinhentosReais implements Desconto{
+
+	private Desconto proximo;
+
+	public double calcularDesconto(Orcamento orcamento) {
+		if (orcamento.getValor() > 500) {
+			return orcamento.getValor() * 0.07;
+		} else {
+			return proximo.calcularDesconto(orcamento);
+		}
+	}
+
+	@Override
+	public void setProximo(Desconto proximo) {
+		this.proximo = proximo;
+		
+	}
+}
+
+public class SemDesconto implements Desconto {
+
+	@Override
+	public double calcularDesconto(Orcamento orcamento) {
+		return 0;
+	}
+
+	@Override
+	public void setProximo(Desconto proximo) {
+		// nao tem proximo
+	}
+
+}
+
+public class CalculadorDeDescontos {
+
+	public double calcular(Orcamento orcamento) {
+		Desconto d1 = new DescontoPorCincoItens();
+		Desconto d2 = new DescontoPorMaisDeQuinhentosReais();
+		Desconto d3 = new SemDesconto();
+		
+		d1.setProximo(d2);
+		d2.setProximo(d3);
+		
+		return d1.calcularDesconto(orcamento);
+	}
+}
+
+----------------------------------------------------------------------------------------------
+
+
+
+
+
