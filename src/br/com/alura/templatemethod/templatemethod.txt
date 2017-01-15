@@ -1,0 +1,115 @@
+// Continuando o projeto de impostos que foi bem resolvido
+// usando o padrao strategy, teremos que adicionar mais dois impostos 
+// que sao muito parecidos, como por exemplo
+// ICPP e IKCV que foram criados recentemente que verifica se deverá 
+// aplicar a taxação maxima senão aplique a taxação mínima
+
+public class ICPP implements Imposto{
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		if(orcamento.getValor() > 500 ){
+			return orcamento.getValor() * 0.07;
+		}else{
+			return orcamento.getValor() * 0.05;
+		}
+	}
+}
+
+public class IKCV implements Imposto {
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		if (orcamento.getValor() > 500 && temItemMaiorQue100ReaisNo(orcamento)) {
+			return orcamento.getValor() * 0.10;
+		} else {
+			return orcamento.getValor() * 0.06;
+		}
+	}
+
+	private boolean temItemMaiorQue100ReaisNo(Orcamento orcamento) {
+        // Ordenando os valores descrecente para melhorar a performance
+		orcamento.getItens().sort((s1, s2) -> Double.compare(s2.getValor(), s1.getValor()));
+		
+		for (Item item : orcamento.getItens()) {
+			System.out.println(item.getValor());
+			if (item.getValor() > 100)
+				return true;
+		}
+		return false;
+	}
+}
+
+-------------------------------------------------------------------
+// Primeira melhoria: Como vimos que ambos impostos recentemente adicionados 
+// são bem parecidos, pois ambos verificam se deverá aplicar a taxacao maxima
+// ou a taxacao minima, iremos criar um molde para que faça isso, ou seja, um template,
+// então criaremos uma classe abstrata com esses metodos abstratos para ambas as classes
+// implementarem, o nome desse padrão é template method.
+
+public abstract class TemplateDeImpostoCondicional implements Imposto{
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		if(deveUsarMaximaTaxacao(orcamento)){
+			return maximaTaxacao(orcamento);
+		}else{
+			return minimaTaxacao(orcamento);
+		}
+	}
+
+	public abstract double minimaTaxacao(Orcamento orcamento);
+
+	public abstract double maximaTaxacao(Orcamento orcamento);
+
+	public abstract boolean deveUsarMaximaTaxacao(Orcamento orcamento);
+
+}
+
+public class IKCV extends TemplateDeImpostoCondicional{
+
+	private boolean temItemMaiorQue100ReaisNo(Orcamento orcamento) {
+        // Ordenando os valores descrecente para melhorar a performance
+		orcamento.getItens().sort((s1, s2) -> Double.compare(s2.getValor(), s1.getValor()));
+		
+		for (Item item : orcamento.getItens()) {
+			System.out.println(item.getValor());
+			if (item.getValor() > 100)
+				return true;
+		}
+		return false;
+	}
+
+	@Override
+	public double minimaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.06;
+	}
+
+	@Override
+	public double maximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.10;
+	}
+
+	@Override
+	public boolean deveUsarMaximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() > 500 && temItemMaiorQue100ReaisNo(orcamento);
+	}
+}
+
+public class ICPP extends TemplateDeImpostoCondicional{
+
+	@Override
+	public double minimaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.07;
+	}
+
+	@Override
+	public double maximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.05;
+	}
+
+	@Override
+	public boolean deveUsarMaximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() > 500;
+	}
+}
