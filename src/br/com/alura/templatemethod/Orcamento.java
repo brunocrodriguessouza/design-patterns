@@ -23,8 +23,7 @@ public class Orcamento {
 	}
 	
 	public List<Item> getItens() {
-//		return Collections.unmodifiableList(itens);
-		return itens;
+		return Collections.unmodifiableList(itens);
 	}
 
 }
