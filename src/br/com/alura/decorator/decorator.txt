@@ -1,0 +1,220 @@
+// Agora temos que adicionar mais uma nova funcionalidade, pois teremos em alguns casos um imposto composto
+// vai ter caso por exemplo que teremos que aplicar em um orçamento um ICMS e um ISS por exemplo
+
+// Vamos fazer algumas modificações para que esse nova funcionalidade seja implementada
+
+// Até agora, temos a seguinte implementação:
+
+public interface Imposto {
+	double calcular(Orcamento orcamento);
+}
+
+public class ICMS implements Imposto {
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		return orcamento.getValor() * 0.1;
+	}
+}
+
+public class ISS implements Imposto{
+	@Override
+	public double calcular(Orcamento orcamento) {
+		return orcamento.getValor() * 0.06;
+	}
+}
+
+public abstract class TemplateDeImpostoCondicional implements Imposto{
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		if(deveUsarMaximaTaxacao(orcamento)){
+			return maximaTaxacao(orcamento);
+		}else{
+			return minimaTaxacao(orcamento);
+		}
+	}
+
+	public abstract double minimaTaxacao(Orcamento orcamento);
+
+	public abstract double maximaTaxacao(Orcamento orcamento);
+
+	public abstract boolean deveUsarMaximaTaxacao(Orcamento orcamento);
+
+}
+
+public class ICPP extends TemplateDeImpostoCondicional{
+
+	@Override
+	public double minimaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.07;
+	}
+
+	@Override
+	public double maximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.05;
+	}
+
+	@Override
+	public boolean deveUsarMaximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() > 500;
+	}
+}
+
+public class IKCV extends TemplateDeImpostoCondicional{
+
+	private boolean temItemMaiorQue100ReaisNo(Orcamento orcamento) {
+        // Ordenando os valores descrecente para melhorar a performance
+		orcamento.getItens().sort((s1, s2) -> Double.compare(s2.getValor(), s1.getValor()));
+		
+		for (Item item : orcamento.getItens()) {
+			System.out.println(item.getValor());
+			if (item.getValor() > 100)
+				return true;
+		}
+		return false;
+	}
+
+	@Override
+	public double minimaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.06;
+	}
+
+	@Override
+	public double maximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.10;
+	}
+
+	@Override
+	public boolean deveUsarMaximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() > 500 && temItemMaiorQue100ReaisNo(orcamento);
+	}
+}
+
+// Primeira melhoria: Para não termos que criamos uma classe para cada variação desse imposto compostos
+// Uma maneira de compormos esses impostos é passando esse comportamento no construtor de cada imposto
+// Vamos mudar a nossa interface para uma classe abstrata, e fazermos no construtor dessa classe receber
+// o outro imposto
+
+public abstract class Imposto {
+	protected Imposto outroImposto;
+
+	public Imposto(Imposto outroImposto) {
+		this.outroImposto = outroImposto;
+	}
+
+	public Imposto() {
+	}
+
+	public abstract double calcular(Orcamento orcamento);
+
+	protected double calculoDoOutroImposto(Orcamento orcamento) {
+		if (outroImposto == null) return 0;
+		return outroImposto.calcular(orcamento);
+	}
+}
+
+public class ICMS extends Imposto {
+
+	public ICMS(Imposto outroImposto) {
+		super(outroImposto);
+	}
+
+	public ICMS() {
+	}
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		return orcamento.getValor() * 0.1 + calculoDoOutroImposto(orcamento);
+	}
+}
+
+public class ISS extends Imposto {
+	 
+	public ISS(Imposto outroImposto) {
+		super(outroImposto);
+	}
+
+	public ISS() {
+	}
+
+	@Override
+	public double calcular(Orcamento orcamento) {
+		return orcamento.getValor() * 0.06 + calculoDoOutroImposto(orcamento);
+	}
+}
+
+public abstract class TemplateDeImpostoCondicional extends Imposto{
+	
+	@Override
+	public double calcular(Orcamento orcamento) {
+		if(deveUsarMaximaTaxacao(orcamento)){
+			return maximaTaxacao(orcamento) + calculoDoOutroImposto(orcamento);
+		}else{
+			return minimaTaxacao(orcamento) + calculoDoOutroImposto(orcamento);
+		}
+	}
+
+	public abstract double minimaTaxacao(Orcamento orcamento);
+
+	public abstract double maximaTaxacao(Orcamento orcamento);
+
+	public abstract boolean deveUsarMaximaTaxacao(Orcamento orcamento);
+
+}
+
+public class ICPP extends TemplateDeImpostoCondicional{
+
+	@Override
+	public double minimaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.07;
+	}
+
+	@Override
+	public double maximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.05;
+	}
+
+	@Override
+	public boolean deveUsarMaximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() > 500;
+	}
+}
+
+public class IKCV extends TemplateDeImpostoCondicional {
+
+	private boolean temItemMaiorQue100ReaisNo(Orcamento orcamento) {
+		// Ordenando os valores descrecente para melhorar a performance
+		orcamento.getItens().sort((s1, s2) -> Double.compare(s2.getValor(), s1.getValor()));
+
+		for (Item item : orcamento.getItens()) {
+			System.out.println(item.getValor());
+			if (item.getValor() > 100)
+				return true;
+		}
+		return false;
+	}
+
+	@Override
+	public double minimaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.06;
+	}
+
+	@Override
+	public double maximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() * 0.10;
+	}
+
+	@Override
+	public boolean deveUsarMaximaTaxacao(Orcamento orcamento) {
+		return orcamento.getValor() > 500 && temItemMaiorQue100ReaisNo(orcamento);
+	}
+}
+
+
+
+
+//Sempre que percebemos que temos comportamentos que podem ser compostos por comportamentos de outras classes envolvidas 
+// em uma mesma hierarquia, como foi o caso dos impostos, que podem ser composto por outros impostos. O Decorator introduz 
+// a flexibilidade na composição 
+// desses comportamentos, bastando escolher no momento da instanciação, quais instancias serão utilizadas para realizar o trabalho.
